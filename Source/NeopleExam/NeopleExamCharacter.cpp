@@ -68,7 +68,6 @@ void ANeopleExamCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("Shot", IE_Released, this, &ANeopleExamCharacter::InputShotReleased);
 	PlayerInputComponent->BindAction("ReflectShot", IE_Pressed, this, &ANeopleExamCharacter::InputReflectShotPressed);
 	PlayerInputComponent->BindAction("ReflectShot", IE_Released, this, &ANeopleExamCharacter::InputReflectShotReleased);
-	PlayerInputComponent->BindAction("ResetShotCount", IE_Pressed, this, &ANeopleExamCharacter::InputResetShotCount);
 
 	PlayerInputComponent->BindAxis("MoveRight", this, &ANeopleExamCharacter::MoveRight);
 
@@ -148,14 +147,15 @@ void ANeopleExamCharacter::ShotReleased()
 
 	if (IsValid(Projectile))
 	{
-		m_ProjectileType = EProjectileType::None;
-
 		ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
 
 		if (IsValid(NeopleExamGameMode))
 		{
+			NeopleExamGameMode->AddProjectileCount(m_ProjectileType, 1);
 			NeopleExamGameMode->VisibleProgressBar(false);
 		}
+
+		m_ProjectileType = EProjectileType::None;
 
 		m_ProjectileChargeTime = 0.f;
 	}
@@ -207,16 +207,6 @@ void ANeopleExamCharacter::InputReflectShotReleased()
 	if (EProjectileType::Reflect == m_ProjectileType)
 	{
 		ShotReleased();
-	}
-}
-
-void ANeopleExamCharacter::InputResetShotCount()
-{
-	ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
-
-	if (IsValid(NeopleExamGameMode))
-	{
-		NeopleExamGameMode->ResetShotCount();
 	}
 }
 

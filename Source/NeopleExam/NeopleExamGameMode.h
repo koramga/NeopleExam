@@ -43,8 +43,8 @@ public :
 	void VisibleProgressBar(bool IsVisible);
 	bool IsVisibleProgressBar() const;
 	void SetProgressBarTime(float Time);
-	void ResetShotCount();
-	void AddShotCount(int Count);
+	void ResetProjectileCount(EProjectileType ProjectileType);
+	void AddProjectileCount(EProjectileType ProjectileType, int Count);
 };
 
 

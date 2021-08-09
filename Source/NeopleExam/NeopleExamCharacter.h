@@ -57,8 +57,6 @@ protected :
 	void InputShotReleased();
 	void InputReflectShotPressed();
 	void InputReflectShotReleased();
-	void InputResetShotCount();
-
 
 public:
 	ANeopleExamCharacter();

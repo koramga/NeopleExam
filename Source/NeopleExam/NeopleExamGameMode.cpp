@@ -2,6 +2,7 @@
 
 #include "NeopleExamGameMode.h"
 #include "NeopleExamCharacter.h"
+#include "NeopleExamPlayerController.h"
 #include "UObject/ConstructorHelpers.h"
 
 ANeopleExamGameMode::ANeopleExamGameMode()
@@ -12,6 +13,8 @@ ANeopleExamGameMode::ANeopleExamGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+	PlayerControllerClass = ANeopleExamPlayerController::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<UHUDMainWidget> MainHUDWidget(TEXT("WidgetBlueprint'/Game/Game/UI/HUDMain.HUDMain_C'"));
 
@@ -75,18 +78,18 @@ void ANeopleExamGameMode::SetProgressBarTime(float Time)
 	}
 }
 
-void ANeopleExamGameMode::ResetShotCount()
+void ANeopleExamGameMode::ResetProjectileCount(EProjectileType ProjectileType)
 {
 	if (IsValid(m_HUDMainWidget))
 	{
-		m_HUDMainWidget->ResetShotCount();
+		m_HUDMainWidget->ResetProjectileCount(ProjectileType);
 	}
 }
 
-void ANeopleExamGameMode::AddShotCount(int Count)
+void ANeopleExamGameMode::AddProjectileCount(EProjectileType ProjectileType, int Count)
 {
 	if (IsValid(m_HUDMainWidget))
 	{
-		m_HUDMainWidget->AddShotCount(Count);
+		m_HUDMainWidget->AddProjectileCount(ProjectileType, Count);
 	}
 }
