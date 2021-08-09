@@ -11,5 +11,5 @@ void ANeopleExamPlayerController::BeginPlay()
 
 	FInputModeGameAndUI	inputMode;
 
-	SetInputMode(inputMode);
+	SetInputMode(inputMode); 
 }
