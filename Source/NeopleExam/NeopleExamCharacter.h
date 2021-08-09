@@ -22,10 +22,13 @@ class ANeopleExamCharacter : public ACharacter
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	float	m_ShotTime;
+	float	m_ProjectileChargeTime;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	ECharacterShotType	m_CharacterShotType;
+	ECharacterProjectileType	m_CharacterProjectileType;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
+	TSubclassOf<class ACharacterProjectile>	m_CharacterProjectileClass;
 
 protected:
 

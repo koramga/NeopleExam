@@ -17,7 +17,7 @@ void PrintViewport(float Duration, const FColor& Color, const FString& strText);
 
 
 UENUM(BlueprintType)
-enum class ECharacterShotType : uint8
+enum class ECharacterProjectileType : uint8
 {
 	None,
 	Normal,

@@ -7,6 +7,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NeopleExamGameMode.h"
+#include "CharacterProjectile.h"
 
 ANeopleExamCharacter::ANeopleExamCharacter()
 {
@@ -47,8 +48,15 @@ ANeopleExamCharacter::ANeopleExamCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 	
-	m_ShotTime = 0.f;
-	m_CharacterShotType = ECharacterShotType::None;
+	m_ProjectileChargeTime = 0.f;
+	m_CharacterProjectileType = ECharacterProjectileType::None;
+
+	static ConstructorHelpers::FClassFinder<ACharacterProjectile> CharacterProjectileClass(TEXT("Blueprint'/Game/Game/StaticMesh/BPSphereProjectile.BPSphereProjectile_C'"));
+
+	if (CharacterProjectileClass.Succeeded())
+	{
+		m_CharacterProjectileClass = CharacterProjectileClass.Class;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -86,15 +94,15 @@ void ANeopleExamCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (ECharacterShotType::None != m_CharacterShotType)
+	if (ECharacterProjectileType::None != m_CharacterProjectileType)
 	{
-		m_ShotTime += DeltaTime;
+		m_ProjectileChargeTime += DeltaTime;
 
 		ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
 
 		if (IsValid(NeopleExamGameMode))
 		{
-			NeopleExamGameMode->SetProgressBarTime(m_ShotTime);
+			NeopleExamGameMode->SetProgressBarTime(m_ProjectileChargeTime);
 		}
 	}
 }
@@ -102,32 +110,61 @@ void ANeopleExamCharacter::Tick(float DeltaTime)
 void ANeopleExamCharacter::ShotReleased()
 {
 	int32 ShotCount = 0;
+	float LifeTime = 3.f;
 
-	if (ECharacterShotType::Normal == m_CharacterShotType)
+	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
 	{
-		PrintViewport(1.f, FColor::Red, FString::Printf(L"Normal Shot <%.2f>", m_ShotTime));
-		LOG(TEXT("Normal Shot <%.2f>"), m_ShotTime);
-
+		PrintViewport(1.f, FColor::Red, FString::Printf(L"Normal Shot <%.2f>", m_ProjectileChargeTime));
+		LOG(TEXT("Normal Shot <%.2f>"), m_ProjectileChargeTime);
 
 		ShotCount = 1;
 	}
-	else if (ECharacterShotType::Split == m_CharacterShotType)
+	else if (ECharacterProjectileType::Split == m_CharacterProjectileType)
 	{
-		PrintViewport(1.f, FColor::Red, FString::Printf(L"Split Shot <%.2f>", m_ShotTime));
-		LOG(TEXT("Split Shot <%.2f>"), m_ShotTime);
+		PrintViewport(1.f, FColor::Red, FString::Printf(L"Split Shot <%.2f>", m_ProjectileChargeTime));
+		LOG(TEXT("Split Shot <%.2f>"), m_ProjectileChargeTime);
 
 		ShotCount = 2;
 	}
-	else if (ECharacterShotType::Reflect == m_CharacterShotType)
+	else if (ECharacterProjectileType::Reflect == m_CharacterProjectileType)
 	{
-
-		PrintViewport(1.f, FColor::Red, FString::Printf(L"Reflect Shot <%.2f>", m_ShotTime));
-		LOG(TEXT("Reflect Shot <%.2f>"), m_ShotTime);
+		PrintViewport(1.f, FColor::Red, FString::Printf(L"Reflect Shot <%.2f>", m_ProjectileChargeTime));
+		LOG(TEXT("Reflect Shot <%.2f>"), m_ProjectileChargeTime);
 
 		ShotCount = 1;
 	}
 
-	m_CharacterShotType = ECharacterShotType::None;
+	if (IsValid(m_CharacterProjectileClass))
+	{
+		LOG(TEXT("Create Projectile"));
+
+		FActorSpawnParameters param;
+
+		param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		param.Owner = this;
+
+		FVector ActorLocation = GetMesh()->GetSocketLocation(TEXT("ik_foot_root"));
+
+
+		ActorLocation.X += GetActorForwardVector().X * 20;
+		ActorLocation.Y += GetActorForwardVector().Y * 20;
+		ActorLocation.Z += 50.f;
+
+		ACharacterProjectile* Projectile = GetWorld()->SpawnActor<ACharacterProjectile>(m_CharacterProjectileClass, ActorLocation
+			, GetActorRotation(), param);
+
+		Projectile->SetProjectileType(m_CharacterProjectileType);
+		Projectile->SetChargeTime(m_ProjectileChargeTime);
+
+		if (m_ProjectileChargeTime >= 3.f)
+		{
+			LifeTime = 5.f;
+		}
+
+		Projectile->SetLifeTime(LifeTime);
+	}
+
+	m_CharacterProjectileType = ECharacterProjectileType::None;
 
 	ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
 
@@ -137,14 +174,14 @@ void ANeopleExamCharacter::ShotReleased()
 		NeopleExamGameMode->AddShotCount(ShotCount);
 	}
 
-	m_ShotTime = 0.f;
+	m_ProjectileChargeTime = 0.f;
 }
 
 void ANeopleExamCharacter::InputShotPressed()
 {
-	if (ECharacterShotType::None == m_CharacterShotType)
+	if (ECharacterProjectileType::None == m_CharacterProjectileType)
 	{
-		m_CharacterShotType = ECharacterShotType::Normal;
+		m_CharacterProjectileType = ECharacterProjectileType::Normal;
 
 		ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
 
@@ -157,7 +194,7 @@ void ANeopleExamCharacter::InputShotPressed()
 
 void ANeopleExamCharacter::InputShotReleased()
 {
-	if (ECharacterShotType::Normal == m_CharacterShotType)
+	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
 	{
 		ShotReleased();
 	}
@@ -165,9 +202,9 @@ void ANeopleExamCharacter::InputShotReleased()
 
 void ANeopleExamCharacter::InputReflectShotPressed()
 {
-	if (ECharacterShotType::None == m_CharacterShotType)
+	if (ECharacterProjectileType::None == m_CharacterProjectileType)
 	{
-		m_CharacterShotType = ECharacterShotType::Reflect;
+		m_CharacterProjectileType = ECharacterProjectileType::Reflect;
 
 		ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
 
@@ -176,11 +213,11 @@ void ANeopleExamCharacter::InputReflectShotPressed()
 			NeopleExamGameMode->VisibleProgressBar(true);
 		}
 	}
-	else if (ECharacterShotType::Normal == m_CharacterShotType)
+	else if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
 	{
-		if (m_ShotTime < 1.f)
+		if (m_ProjectileChargeTime < 1.f)
 		{
-			m_CharacterShotType = ECharacterShotType::Split;
+			m_CharacterProjectileType = ECharacterProjectileType::Split;
 
 			ShotReleased();
 		}
@@ -189,7 +226,7 @@ void ANeopleExamCharacter::InputReflectShotPressed()
 
 void ANeopleExamCharacter::InputReflectShotReleased()
 {
-	if (ECharacterShotType::Reflect == m_CharacterShotType)
+	if (ECharacterProjectileType::Reflect == m_CharacterProjectileType)
 	{
 		ShotReleased();
 	}
