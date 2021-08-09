@@ -2,6 +2,7 @@
 
 
 #include "CharacterProjectile.h"
+#include "NeopleExamGameMode.h"
 
 // Sets default values
 ACharacterProjectile::ACharacterProjectile()
@@ -13,13 +14,25 @@ ACharacterProjectile::ACharacterProjectile()
 
 	SetRootComponent(m_Body);
 
-	m_ArrowComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Arrow"));
+	m_MainArrowComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Arrow"));
+	
+	m_MainArrowComponent->SetupAttachment(m_Body);
 
-	m_ArrowComponent->SetupAttachment(m_Body);
+	m_SplitArrowComponents.Add(CreateDefaultSubobject<UArrowComponent>(TEXT("SplitArrow00")));
+	m_SplitArrowComponents.Add(CreateDefaultSubobject<UArrowComponent>(TEXT("SplitArrow01")));
+
+	for (UArrowComponent* SplitArrowComponent : m_SplitArrowComponents)
+	{
+		SplitArrowComponent->SetupAttachment(m_Body);
+		SplitArrowComponent->SetVisibility(false);
+	}
 
 	m_Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 
 	m_Mesh->SetupAttachment(m_Body);
+
+	m_CharacterProjectileType = ECharacterProjectileType::Normal;
+	m_LifeTime = 3.f;
 
 	//m_Movement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 }
@@ -28,6 +41,10 @@ ACharacterProjectile::ACharacterProjectile()
 void ACharacterProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
+
+	NeopleExamGameMode->AddShotCount(1);
 
 	m_Body->OnComponentBeginOverlap.AddDynamic(this, &ACharacterProjectile::OnOverlapBegin);
 }
@@ -43,6 +60,35 @@ void ACharacterProjectile::Tick(float DeltaTime)
 	
 	if (m_LifeTime <= 0.f)
 	{
+		if (ECharacterProjectileType::Split == m_CharacterProjectileType)
+		{
+			//3개를 만들어야한다.
+
+			if (IsValid(m_CharacterProjectileClass))
+			{
+				FRotator ActorRotator = GetActorRotation();
+				FVector ActorLocation = GetActorLocation();
+
+				FActorSpawnParameters param;
+
+				param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				param.Owner = GetOwner();
+
+				ACharacterProjectile* MainProjectile = GetWorld()->SpawnActor<ACharacterProjectile>(m_CharacterProjectileClass, GetActorLocation()
+					, ActorRotator + m_MainArrowComponent->GetRelativeRotation(), param);
+
+				MainProjectile->InitProjectileType(ECharacterProjectileType::Normal, m_CharacterProjectileClass);
+
+				for (UArrowComponent* SplitArrowComponent : m_SplitArrowComponents)
+				{
+					ACharacterProjectile* SplitProjectile = GetWorld()->SpawnActor<ACharacterProjectile>(m_CharacterProjectileClass, GetActorLocation()
+						, ActorRotator + SplitArrowComponent->GetRelativeRotation(), param);
+
+					SplitProjectile->InitProjectileType(ECharacterProjectileType::Normal, m_CharacterProjectileClass);
+				}
+			}
+		}
+
 		Destroy();
 	}
 }
@@ -54,54 +100,44 @@ void ACharacterProjectile::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, A
 	if (IsValid(OtherActor))
 	{
 		if (OtherActor != GetOwner()
-			&& OtherActor != this)
+			&& OtherActor->GetOwner() != GetOwner())
 		{
-			Destroy();
-			//LOG(TEXT("Overlap Destroy <%s>"), *OtherActor->GetName());
+			if (ECharacterProjectileType::Reflect == m_CharacterProjectileType)
+			{
+				SetActorRotation(GetActorRotation() + FRotator(0.f, -180.f, 0.f));
+			}
+			else
+			{
+				Destroy();
+			}
 		}
 	}
 }
 
-void ACharacterProjectile::SetProjectileType(ECharacterProjectileType ProjectileType)
+void ACharacterProjectile::InitProjectileType(ECharacterProjectileType ProjectileType, TSubclassOf<ACharacterProjectile>& ProjectileClass)
 {
 	m_CharacterProjectileType = ProjectileType;
+	m_CharacterProjectileClass = ProjectileClass;
 
 	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
 	{
 
 	}
-	else if (ECharacterProjectileType::Split == m_CharacterProjectileType)
+	else if (ECharacterProjectileType::Charge == m_CharacterProjectileType)
 	{
-
-	}
-	else if (ECharacterProjectileType::Reflect == m_CharacterProjectileType)
-	{
-		m_ArrowComponent->SetArrowColor(FLinearColor(0.f, 0.f, 1.f));
-	}
-}
-
-void ACharacterProjectile::SetLifeTime(float LifeTime)
-{
-	m_LifeTime = LifeTime;
-}
-
-void ACharacterProjectile::SetChargeTime(float ChargeTime)
-{
-	m_ChargeTime = ChargeTime;
-
-	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
-	{
-		if (m_ChargeTime >= 3.f)
-		{
-			m_ArrowComponent->SetWorldScale3D(FVector(3.f, 3.f, 3.f));
-		}
+		m_MainArrowComponent->SetWorldScale3D(FVector(3.f, 3.f, 3.f));
+		m_LifeTime = 5.f;
 	}
 	else if (ECharacterProjectileType::Split == m_CharacterProjectileType)
 	{
-
+		m_SplitArrowComponents[0]->SetRelativeRotation(FRotator(0.f, 45.f, 0.f));
+		m_SplitArrowComponents[0]->SetVisibility(true);
+		m_SplitArrowComponents[1]->SetRelativeRotation(FRotator(0.f, -45.f, 0.f));
+		m_SplitArrowComponents[1]->SetVisibility(true);
 	}
 	else if (ECharacterProjectileType::Reflect == m_CharacterProjectileType)
 	{
-
+		m_MainArrowComponent->SetArrowColor(FLinearColor(0.f, 0.f, 1.f));
+		m_LifeTime = 5.f;
 	}
 }

@@ -94,7 +94,7 @@ void ANeopleExamCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (ECharacterProjectileType::None != m_CharacterProjectileType)
+	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
 	{
 		m_ProjectileChargeTime += DeltaTime;
 
@@ -104,35 +104,17 @@ void ANeopleExamCharacter::Tick(float DeltaTime)
 		{
 			NeopleExamGameMode->SetProgressBarTime(m_ProjectileChargeTime);
 		}
+
+		if (m_ProjectileChargeTime >= FULL_CHARGETIME)
+		{
+			m_CharacterProjectileType = ECharacterProjectileType::Charge;
+		}
 	}
 }
 
 void ANeopleExamCharacter::ShotReleased()
 {
-	int32 ShotCount = 0;
 	float LifeTime = 3.f;
-
-	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
-	{
-		PrintViewport(1.f, FColor::Red, FString::Printf(L"Normal Shot <%.2f>", m_ProjectileChargeTime));
-		LOG(TEXT("Normal Shot <%.2f>"), m_ProjectileChargeTime);
-
-		ShotCount = 1;
-	}
-	else if (ECharacterProjectileType::Split == m_CharacterProjectileType)
-	{
-		PrintViewport(1.f, FColor::Red, FString::Printf(L"Split Shot <%.2f>", m_ProjectileChargeTime));
-		LOG(TEXT("Split Shot <%.2f>"), m_ProjectileChargeTime);
-
-		ShotCount = 2;
-	}
-	else if (ECharacterProjectileType::Reflect == m_CharacterProjectileType)
-	{
-		PrintViewport(1.f, FColor::Red, FString::Printf(L"Reflect Shot <%.2f>", m_ProjectileChargeTime));
-		LOG(TEXT("Reflect Shot <%.2f>"), m_ProjectileChargeTime);
-
-		ShotCount = 1;
-	}
 
 	if (IsValid(m_CharacterProjectileClass))
 	{
@@ -153,15 +135,7 @@ void ANeopleExamCharacter::ShotReleased()
 		ACharacterProjectile* Projectile = GetWorld()->SpawnActor<ACharacterProjectile>(m_CharacterProjectileClass, ActorLocation
 			, GetActorRotation(), param);
 
-		Projectile->SetProjectileType(m_CharacterProjectileType);
-		Projectile->SetChargeTime(m_ProjectileChargeTime);
-
-		if (m_ProjectileChargeTime >= 3.f)
-		{
-			LifeTime = 5.f;
-		}
-
-		Projectile->SetLifeTime(LifeTime);
+		Projectile->InitProjectileType(m_CharacterProjectileType, m_CharacterProjectileClass);
 	}
 
 	m_CharacterProjectileType = ECharacterProjectileType::None;
@@ -171,7 +145,6 @@ void ANeopleExamCharacter::ShotReleased()
 	if (IsValid(NeopleExamGameMode))
 	{
 		NeopleExamGameMode->VisibleProgressBar(false);
-		NeopleExamGameMode->AddShotCount(ShotCount);
 	}
 
 	m_ProjectileChargeTime = 0.f;
@@ -194,7 +167,8 @@ void ANeopleExamCharacter::InputShotPressed()
 
 void ANeopleExamCharacter::InputShotReleased()
 {
-	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
+	if (ECharacterProjectileType::Normal == m_CharacterProjectileType
+		|| ECharacterProjectileType::Charge == m_CharacterProjectileType)
 	{
 		ShotReleased();
 	}
@@ -205,13 +179,6 @@ void ANeopleExamCharacter::InputReflectShotPressed()
 	if (ECharacterProjectileType::None == m_CharacterProjectileType)
 	{
 		m_CharacterProjectileType = ECharacterProjectileType::Reflect;
-
-		ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
-
-		if (IsValid(NeopleExamGameMode))
-		{
-			NeopleExamGameMode->VisibleProgressBar(true);
-		}
 	}
 	else if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
 	{

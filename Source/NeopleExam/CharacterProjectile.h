@@ -20,7 +20,10 @@ protected:
 	USphereComponent* m_Body;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	UArrowComponent* m_ArrowComponent;
+	UArrowComponent* m_MainArrowComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
+	TArray<UArrowComponent*> m_SplitArrowComponents;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* m_Mesh;
@@ -37,6 +40,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
 	float					m_ChargeTime;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
+	TSubclassOf<ACharacterProjectile>	m_CharacterProjectileClass;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -51,7 +57,5 @@ private :
 		, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 public :
-	void SetProjectileType(ECharacterProjectileType ProjectileType);
-	void SetLifeTime(float LifeTime);
-	void SetChargeTime(float ChargeTime);
+	void InitProjectileType(ECharacterProjectileType ProjectileType, TSubclassOf<ACharacterProjectile>& ProjectileClass);
 };

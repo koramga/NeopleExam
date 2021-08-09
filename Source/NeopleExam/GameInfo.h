@@ -9,6 +9,8 @@
  * 
  */
 
+#define FULL_CHARGETIME		3.f
+
 DECLARE_LOG_CATEGORY_EXTERN(UE8, Log, All)
 #define LOG_CALLINFO		(FString(__FUNCTION__) + TEXT("{") + FString::FromInt(__LINE__) + TEXT("}"))
 #define LOG(Format, ...)	UE_LOG(UE8, Warning, TEXT("%s : %s"), *LOG_CALLINFO, *FString::Printf(Format, ##__VA_ARGS__))
@@ -21,6 +23,7 @@ enum class ECharacterProjectileType : uint8
 {
 	None,
 	Normal,
+	Charge,
 	Split,
 	Reflect,
 };

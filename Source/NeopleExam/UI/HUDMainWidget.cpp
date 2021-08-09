@@ -65,5 +65,5 @@ bool UHUDMainWidget::IsVisibleProgressBar() const
 
 void UHUDMainWidget::SetProgressBarTime(float Time)
 {
-	m_PBShotTime->SetPercent(Time >= 3.f ? 1.f : Time / 3.f);
+	m_PBShotTime->SetPercent(Time >= FULL_CHARGETIME ? 1.f : Time / FULL_CHARGETIME);
 }
