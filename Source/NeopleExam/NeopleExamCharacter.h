@@ -25,10 +25,7 @@ class ANeopleExamCharacter : public ACharacter
 	float	m_ProjectileChargeTime;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	ECharacterProjectileType	m_CharacterProjectileType;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	TSubclassOf<class ACharacterProjectile>	m_CharacterProjectileClass;
+	EProjectileType	m_ProjectileType;
 
 protected:
 

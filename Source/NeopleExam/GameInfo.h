@@ -19,7 +19,7 @@ void PrintViewport(float Duration, const FColor& Color, const FString& strText);
 
 
 UENUM(BlueprintType)
-enum class ECharacterProjectileType : uint8
+enum class EProjectileType : uint8
 {
 	None,
 	Normal,
@@ -27,3 +27,5 @@ enum class ECharacterProjectileType : uint8
 	Split,
 	Reflect,
 };
+
+FName ConvertProjectileTypeToName(EProjectileType ProjectileType);

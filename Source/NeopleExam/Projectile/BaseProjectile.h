@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include "GameInfo.h"
+#include "../GameInfo.h"
 #include "GameFramework/Actor.h"
-#include "CharacterProjectile.generated.h"
+#include "BaseProjectile.generated.h"
 
 UCLASS()
-class NEOPLEEXAM_API ACharacterProjectile : public AActor
+class NEOPLEEXAM_API ABaseProjectile : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ACharacterProjectile();
+	ABaseProjectile();
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
@@ -28,20 +28,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* m_Mesh;
 
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	//UProjectileMovementComponent* m_Movement;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	ECharacterProjectileType m_CharacterProjectileType;
+	EProjectileType m_ProjectileType;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
 	float					m_LifeTime;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	float					m_ChargeTime;
+	float					m_Speed;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
-	TSubclassOf<ACharacterProjectile>	m_CharacterProjectileClass;
+	float					m_ChargeTime;
 
 protected:
 	// Called when the game starts or when spawned
@@ -51,11 +48,13 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-private :
+protected :
+	virtual void OverlapBegin(class AActor* OtherActor, const FHitResult& SweepResult);
+	virtual void EndLifeTime();
+
+private:
 	UFUNCTION()
 	void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor
 		, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-public :
-	void InitProjectileType(ECharacterProjectileType ProjectileType, TSubclassOf<ACharacterProjectile>& ProjectileClass);
 };

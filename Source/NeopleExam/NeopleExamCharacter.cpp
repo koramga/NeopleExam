@@ -7,7 +7,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NeopleExamGameMode.h"
-#include "CharacterProjectile.h"
+#include "Projectile/ChargeProjectile.h"
+#include "Projectile/NormalProjectile.h"
+#include "Projectile/ReflectProjectile.h"
+#include "Projectile/SplitProjectile.h"
 
 ANeopleExamCharacter::ANeopleExamCharacter()
 {
@@ -49,14 +52,7 @@ ANeopleExamCharacter::ANeopleExamCharacter()
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 	
 	m_ProjectileChargeTime = 0.f;
-	m_CharacterProjectileType = ECharacterProjectileType::None;
-
-	static ConstructorHelpers::FClassFinder<ACharacterProjectile> CharacterProjectileClass(TEXT("Blueprint'/Game/Game/StaticMesh/BPSphereProjectile.BPSphereProjectile_C'"));
-
-	if (CharacterProjectileClass.Succeeded())
-	{
-		m_CharacterProjectileClass = CharacterProjectileClass.Class;
-	}
+	m_ProjectileType = EProjectileType::None;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -94,7 +90,7 @@ void ANeopleExamCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
+	if (EProjectileType::Normal == m_ProjectileType)
 	{
 		m_ProjectileChargeTime += DeltaTime;
 
@@ -107,7 +103,7 @@ void ANeopleExamCharacter::Tick(float DeltaTime)
 
 		if (m_ProjectileChargeTime >= FULL_CHARGETIME)
 		{
-			m_CharacterProjectileType = ECharacterProjectileType::Charge;
+			m_ProjectileType = EProjectileType::Charge;
 		}
 	}
 }
@@ -116,45 +112,60 @@ void ANeopleExamCharacter::ShotReleased()
 {
 	float LifeTime = 3.f;
 
-	if (IsValid(m_CharacterProjectileClass))
+	FActorSpawnParameters param;
+
+	param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	param.Owner = this;
+
+	FVector ActorLocation = GetMesh()->GetSocketLocation(TEXT("ik_foot_root"));
+
+
+	ActorLocation.X += GetActorForwardVector().X * 20;
+	ActorLocation.Y += GetActorForwardVector().Y * 20;
+	ActorLocation.Z += 50.f;
+
+	ABaseProjectile* Projectile = nullptr;
+
+	switch (m_ProjectileType)
 	{
-		LOG(TEXT("Create Projectile"));
-
-		FActorSpawnParameters param;
-
-		param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		param.Owner = this;
-
-		FVector ActorLocation = GetMesh()->GetSocketLocation(TEXT("ik_foot_root"));
-
-
-		ActorLocation.X += GetActorForwardVector().X * 20;
-		ActorLocation.Y += GetActorForwardVector().Y * 20;
-		ActorLocation.Z += 50.f;
-
-		ACharacterProjectile* Projectile = GetWorld()->SpawnActor<ACharacterProjectile>(m_CharacterProjectileClass, ActorLocation
+	case EProjectileType::Normal:
+		Projectile = GetWorld()->SpawnActor<ANormalProjectile>(ANormalProjectile::StaticClass(), ActorLocation
 			, GetActorRotation(), param);
-
-		Projectile->InitProjectileType(m_CharacterProjectileType, m_CharacterProjectileClass);
+		break;
+	case EProjectileType::Charge:
+		Projectile = GetWorld()->SpawnActor<AChargeProjectile>(AChargeProjectile::StaticClass(), ActorLocation
+			, GetActorRotation(), param);
+		break;
+	case EProjectileType::Split:
+		Projectile = GetWorld()->SpawnActor<ASplitProjectile>(ASplitProjectile::StaticClass(), ActorLocation
+			, GetActorRotation(), param);
+		break;
+	case EProjectileType::Reflect:
+		Projectile = GetWorld()->SpawnActor<AReflectProjectile>(AReflectProjectile::StaticClass(), ActorLocation
+			, GetActorRotation(), param);
+		break;
 	}
 
-	m_CharacterProjectileType = ECharacterProjectileType::None;
-
-	ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
-
-	if (IsValid(NeopleExamGameMode))
+	if (IsValid(Projectile))
 	{
-		NeopleExamGameMode->VisibleProgressBar(false);
-	}
+		m_ProjectileType = EProjectileType::None;
 
-	m_ProjectileChargeTime = 0.f;
+		ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
+
+		if (IsValid(NeopleExamGameMode))
+		{
+			NeopleExamGameMode->VisibleProgressBar(false);
+		}
+
+		m_ProjectileChargeTime = 0.f;
+	}
 }
 
 void ANeopleExamCharacter::InputShotPressed()
 {
-	if (ECharacterProjectileType::None == m_CharacterProjectileType)
+	if (EProjectileType::None == m_ProjectileType)
 	{
-		m_CharacterProjectileType = ECharacterProjectileType::Normal;
+		m_ProjectileType = EProjectileType::Normal;
 
 		ANeopleExamGameMode* NeopleExamGameMode = Cast<ANeopleExamGameMode>(GetWorld()->GetAuthGameMode());
 
@@ -167,8 +178,8 @@ void ANeopleExamCharacter::InputShotPressed()
 
 void ANeopleExamCharacter::InputShotReleased()
 {
-	if (ECharacterProjectileType::Normal == m_CharacterProjectileType
-		|| ECharacterProjectileType::Charge == m_CharacterProjectileType)
+	if (EProjectileType::Normal == m_ProjectileType
+		|| EProjectileType::Charge == m_ProjectileType)
 	{
 		ShotReleased();
 	}
@@ -176,15 +187,15 @@ void ANeopleExamCharacter::InputShotReleased()
 
 void ANeopleExamCharacter::InputReflectShotPressed()
 {
-	if (ECharacterProjectileType::None == m_CharacterProjectileType)
+	if (EProjectileType::None == m_ProjectileType)
 	{
-		m_CharacterProjectileType = ECharacterProjectileType::Reflect;
+		m_ProjectileType = EProjectileType::Reflect;
 	}
-	else if (ECharacterProjectileType::Normal == m_CharacterProjectileType)
+	else if (EProjectileType::Normal == m_ProjectileType)
 	{
 		if (m_ProjectileChargeTime < 1.f)
 		{
-			m_CharacterProjectileType = ECharacterProjectileType::Split;
+			m_ProjectileType = EProjectileType::Split;
 
 			ShotReleased();
 		}
@@ -193,7 +204,7 @@ void ANeopleExamCharacter::InputReflectShotPressed()
 
 void ANeopleExamCharacter::InputReflectShotReleased()
 {
-	if (ECharacterProjectileType::Reflect == m_CharacterProjectileType)
+	if (EProjectileType::Reflect == m_ProjectileType)
 	{
 		ShotReleased();
 	}
