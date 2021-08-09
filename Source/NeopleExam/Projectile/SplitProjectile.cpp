@@ -41,10 +41,14 @@ void ASplitProjectile::EndLifeTime()
 	ANormalProjectile* NormalProjectile = GetWorld()->SpawnActor<ANormalProjectile>(GetActorLocation()
 		, ActorRotator + m_MainArrowComponent->GetRelativeRotation(), param);
 
+	NormalProjectile->SetInfiniteLifeTime();
+
 	for (UArrowComponent* SplitArrowComponent : m_SplitArrowComponents)
 	{
 		ANormalProjectile* SplitProjectile = GetWorld()->SpawnActor<ANormalProjectile>(GetActorLocation()
 			, ActorRotator + SplitArrowComponent->GetRelativeRotation(), param);
+
+		SplitProjectile->SetInfiniteLifeTime();
 	}
 
 	Super::EndLifeTime();

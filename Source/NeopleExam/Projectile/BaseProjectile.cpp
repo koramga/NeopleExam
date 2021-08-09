@@ -54,6 +54,8 @@ ABaseProjectile::ABaseProjectile()
 	}
 
 	m_ProjectileType = EProjectileType::None;
+
+	m_InfiniteLifeTime = false;
 }
 
 // Called when the game starts or when spawned
@@ -84,11 +86,14 @@ void ABaseProjectile::Tick(float DeltaTime)
 
 	SetActorLocation(GetActorLocation() + GetActorForwardVector() * DeltaTime * m_Speed);
 
-	m_LifeTime -= DeltaTime;
-
-	if (m_LifeTime <= 0.f)
+	if (false == m_InfiniteLifeTime)
 	{
-		EndLifeTime();
+		m_LifeTime -= DeltaTime;
+
+		if (m_LifeTime <= 0.f)
+		{
+			EndLifeTime();
+		}
 	}
 }
 
@@ -107,6 +112,11 @@ void ABaseProjectile::OverlapBegin(AActor* OtherActor, const FHitResult& SweepRe
 void ABaseProjectile::EndLifeTime()
 {
 	Destroy();
+}
+
+void ABaseProjectile::SetInfiniteLifeTime()
+{
+	m_InfiniteLifeTime = true;
 }
 
 void ABaseProjectile::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
