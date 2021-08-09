@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "GameInfo.h"
 #include "GameFramework/Character.h"
 #include "NeopleExamCharacter.generated.h"
 
@@ -19,6 +19,14 @@ class ANeopleExamCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
+	float	m_ShotTime;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"));
+	ECharacterShotType	m_CharacterShotType;
+
 protected:
 
 	/** Called for side to side input */
@@ -33,6 +41,23 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
 	// End of APawn interface
+	// 
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+private :
+	void ShotReleased();
+
+protected :
+	void InputShotPressed();
+	void InputShotReleased();
+	void InputReflectShotPressed();
+	void InputReflectShotReleased();
+	void InputResetShotCount();
 
 
 public:
